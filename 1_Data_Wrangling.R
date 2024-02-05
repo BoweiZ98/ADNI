@@ -41,4 +41,6 @@ adni_mci = adnimerge %>%
     converter
   )
 
-gtsummary::tbl_summary(adni_mci, b = converter)   
+gtsummary::tbl_summary(adni_mci, b = converter) 
+
+# test
