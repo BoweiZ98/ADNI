@@ -42,86 +42,11 @@ library(mice)
 
 ## Load Data Set 
 ```{r}
-
-library(ADNIMERGE)
-data(adnimerge)
-
-
+# use csv file
+adni_baseline = read.csv("adni_baseline.csv")
+train = read.csv("train.csv")
+test = read.csv("test.csv")
 ```
-
-## Data Cleaning
-We are subsetting to baseline visits only here. 
-```{r, echo=FALSE}
-
-target_id = adnimerge %>%
-  filter(M <= 60) %>% # use only first 5 years
-  filter(DX.bl != "AD") %>% # exclude patients having AD at baseline
-  select(RID) %>%
-  unique() %>%
-  pull(RID)
-
-converter_id = adnimerge %>%
-  filter(DX.bl != "AD" & DX == "Dementia") %>%
-  select(RID) %>%
-  unique() %>%
-  pull(RID)
-
-non_converter_id = setdiff(target_id, converter_id)
-
-adni_baseline = adnimerge %>%
-  filter(RID %in% target_id & M <= 60 & VISCODE == "bl") %>% # use only the first 5 years
-  mutate(converter = case_when(
-    RID %in% converter_id ~ 1,
-    RID %in% non_converter_id ~ 0
-  ),
-    Month = as.numeric(Month),
-    DX) %>%
-  select(
-    # ID
-    RID,
-    # outcome
-    converter,
-    # Sociodemographic 
-    PTGENDER, AGE, PTEDUCAT, PTMARRY,
-    # subtypes of MCI at baseline
-    DX.bl,
-    # clinical scales
-    CDRSB, CDRSB, FAQ,
-    # Neurosychological tests
-    MMSE, ADAS11, ADAS13,ADASQ4, 
-    RAVLT.immediate, RAVLT.learning, RAVLT.forgetting,
-    RAVLT.perc.forgetting, LDELTOTAL, TRABSCOR,
-  )
-
-```
-
-## Data Imputation
-```{r, echo=FALSE, include=FALSE}
-
-# Missing Value Imputation
-imputation = mice(
-  adni_baseline,
-  m = 10, # number of multiple imputations 
-  method = "pmm", # predictive mean matching (numeric data)
-  maxit = 10, # A scalar giving the number of iterations
-  seed = 1
-)
-adni_imputed = complete(imputation,1)
-
-
-```
-
-## Splitting the Data 
-```{r}
-# Train/Test Split
-set.seed(2024)
-n = nrow(adni_imputed)
-indices = sample(n, 0.7*n)
-train = adni_imputed[indices,]
-test = adni_imputed[-indices,]
-
-```
-
 
 ## Exploratory Analysis
 
@@ -129,17 +54,15 @@ test = adni_imputed[-indices,]
 ```{r, echo=FALSE}
 
 # Summary
-gtsummary::tbl_summary(adni_imputed, b = converter) 
+gtsummary::tbl_summary(adni_baseline, b = converter) 
 
 ```
 
 
 ### Data Visualization 
 ```{r}
-
-
 # MMSE 
-ggplot(data = adni_imputed, aes(x = MMSE, fill = factor(converter)))+
+ggplot(data = adni_baseline, aes(x = MMSE, fill = factor(converter)))+
     geom_histogram() +
   labs(title = "MMSE Counts (Stratified by Converter)") +
   scale_color_manual(values=c("#999999", "#E69F00", "#56B4E9")) +
@@ -148,13 +71,15 @@ ggplot(data = adni_imputed, aes(x = MMSE, fill = factor(converter)))+
 
 
 # ADAS11
-ggplot(data = adni_imputed, aes(x = ADAS11, fill = factor(converter)))+
+ggplot(data = adni_baseline, aes(x = ADAS11, fill = factor(converter)))+
     geom_histogram(bins = 35) +
   labs(title = "ADAS11 Counts (Stratified by Converter)") +
      scale_color_manual(values=c("#999999", "#E69F00", "#56B4E9")) +
   scale_fill_manual(values=c("#999999", "#E69F00", "#56B4E9"))
    
-
+ggpairs(adni_baseline, progress = F, 
+        ggplot2::aes(color = as.factor(converter), alpha = 0.7),
+        columns = c(7:10, 13,17,18))
 
 ```
 
