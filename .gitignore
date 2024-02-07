@@ -50,3 +50,6 @@ rsconnect/
 
 # CSV
 *.csv
+
+# pdf
+*.pdf
