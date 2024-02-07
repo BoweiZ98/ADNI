@@ -1,7 +1,7 @@
 ---
 title: "ADNI Dataset"
 subtitle: "Predicting Alzheimer's Disease given a MCI patient's characteristics"
-author: "Jomel Meeko Manzano"
+author: "Bowei Zhang, Jomel Meeko Manzano & Jin Cao"
 wagese: "8th February, 2024"
 output:
   pdf_document:
