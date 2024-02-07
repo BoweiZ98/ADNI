@@ -26,10 +26,11 @@ adni_baseline = adnimerge %>%
   filter(RID %in% target_id & M <= 60 & VISCODE == "bl") %>% # use only the first 5 years
   mutate(converter = case_when(
     RID %in% converter_id ~ 1,
-    RID %in% non_converter_id ~ 0
-  ),
+    RID %in% non_converter_id ~ 0),
     Month = as.numeric(Month),
-    DX) %>%
+    PTMARRY = as.factor(PTMARRY),
+    PTMARRY = na_if(PTMARRY, "Unknown")
+  ) %>%
   select(
     # outcome
     converter,
