@@ -38,7 +38,7 @@ adni_baseline = adnimerge %>%
     # subtypes of MCI at baseline
     DX.bl,
     # clinical scales
-    CDRSB, CDRSB, FAQ,
+    CDRSB, FAQ,
     # Neurosychological tests
     MMSE, ADAS11, ADAS13,ADASQ4, 
     RAVLT.immediate, RAVLT.learning, RAVLT.forgetting,
