@@ -1,0 +1,114 @@
+---
+title: "ADNI Dataset"
+subtitle: "Predicting Alzheimer's Disease given a MCI patient's characteristics"
+author: "Jomel Meeko Manzano"
+wagese: "8th February, 2024"
+output:
+  pdf_document:
+    df_print: kable
+  html_document:
+    df_print: paged
+---
+
+
+```{r global_options, include=FALSE}
+# these are some optional settings that will change how some features look
+# you do not need to change them.
+knitr::opts_chunk$set(out.wibuildingh = "50%", out.height="50%", fig.align="center", warning=FALSE, message=FALSE)
+```
+
+
+```{r, include=FALSE}
+# TO-DO:
+
+# 1) Summary statistics: We have to condense it and make sure to present only..
+# important characteristics. 
+
+```
+
+
+```{r, include = FALSE}
+
+# Libraries Used 
+
+library(alr4)
+library(tidyverse)
+library(knitr)
+library(GGally)
+
+```
+
+
+## Load Data Set 
+```{r}
+
+library(ADNIMERGE)
+data(adnimerge)
+
+
+```
+
+## Data Cleaning
+We are subsetting to baseline visits only here. 
+```{r, echo=FALSE}
+
+target_id = adnimerge %>%
+  filter(M <= 60) %>% # use only first 5 years
+  filter(DX.bl != "AD") %>% # exclude patients having AD at baseline
+  select(RID) %>%
+  unique() %>%
+  pull(RID)
+
+converter_id = adnimerge %>%
+  filter(DX.bl != "AD" & DX == "Dementia") %>%
+  select(RID) %>%
+  unique() %>%
+  pull(RID)
+
+non_converter_id = setdiff(target_id, converter_id)
+
+adni_baseline = adnimerge %>%
+  filter(RID %in% target_id & M <= 60 & VISCODE == "bl") %>% # use only the first 5 years
+  mutate(converter = case_when(
+    RID %in% converter_id ~ 1,
+    RID %in% non_converter_id ~ 0
+  ),
+    Month = as.numeric(Month),
+    DX) %>%
+  select(
+    # ID
+    RID,
+    # outcome
+    converter,
+    # Sociodemographic 
+    PTGENDER, AGE, PTEDUCAT, PTMARRY,
+    # subtypes of MCI at baseline
+    DX.bl,
+    # clinical scales
+    CDRSB, CDRSB, FAQ,
+    # Neurosychological tests
+    MMSE, ADAS11, ADAS13,ADASQ4, 
+    RAVLT.immediate, RAVLT.learning, RAVLT.forgetting,
+    RAVLT.perc.forgetting, LDELTOTAL, TRABSCOR,
+  )
+
+```
+
+## Exploratory Analysis
+
+### Summary Statistics
+```{r, echo=FALSE}
+
+# Stratify if they are a converter or not 
+gtsummary::tbl_summary(adni_baseline, b = converter) 
+
+```
+
+
+### Data Visualization 
+```{r}
+
+
+
+```
+
