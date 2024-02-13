@@ -26,10 +26,11 @@ adni_baseline = adnimerge %>%
   filter(RID %in% target_id & M <= 60 & VISCODE == "bl") %>% # use only the first 5 years
   mutate(converter = case_when(
     RID %in% converter_id ~ 1,
-    RID %in% non_converter_id ~ 0
-  ),
+    RID %in% non_converter_id ~ 0),
     Month = as.numeric(Month),
-    DX) %>%
+    PTMARRY = as.factor(PTMARRY),
+    PTMARRY = na_if(PTMARRY, "Unknown")
+  ) %>%
   select(
     # outcome
     converter,
@@ -56,9 +57,6 @@ imputation = mice(
 )
 adni_imputed = complete(imputation,1)
 
-# Summary
-gtsummary::tbl_summary(adni_imputed, b = converter) 
-
 # Train/Test Split
 set.seed(2024)
 n = nrow(adni_imputed)
@@ -75,4 +73,66 @@ write.csv(train,
           row.names = F)  
 write.csv(test, 
           file = "test.csv",
+          row.names = F)  
+
+# completer
+
+completer_id = adnimerge %>%
+  filter(M == 60) %>% # use only first 5 years
+  filter(DX.bl %in% c("EMCI", "LMCI")) %>%
+  select(RID) %>%
+  unique() %>%
+  pull(RID)
+
+adni_completer = adnimerge %>%
+  filter(RID %in% completer_id & M <= 60 & VISCODE == "bl") %>% # use only the first 5 years
+  mutate(converter = case_when(
+    RID %in% converter_id ~ 1,
+    RID %in% non_converter_id ~ 0),
+    Month = as.numeric(Month),
+    PTMARRY = as.factor(PTMARRY),
+    PTMARRY = na_if(PTMARRY, "Unknown")
+  ) %>%
+  select(
+    # outcome
+    converter,
+    # Sociodemographic 
+    PTGENDER, AGE, PTEDUCAT, PTMARRY,
+    # subtypes of MCI at baseline
+    DX.bl,
+    # clinical scales
+    CDRSB, FAQ,
+    # Neurosychological tests
+    MMSE, ADAS11, ADAS13,ADASQ4, 
+    RAVLT.immediate, RAVLT.learning, RAVLT.forgetting,
+    RAVLT.perc.forgetting, LDELTOTAL, TRABSCOR,
+  )
+
+# missing
+
+imputation = mice(
+  adni_completer,
+  m = 10,
+  method = "pmm",
+  maxit = 10,
+  seed = 1
+)
+adni_completer = complete(imputation,1)
+
+# Train/Test Split
+set.seed(2024)
+n = nrow(adni_completer)
+indices = sample(n, 0.7*n)
+train = adni_completer[indices,]
+test = adni_completer[-indices,]
+
+# Write Out CSV
+write.csv(adni_completer, 
+          file = "adni_completer.csv",
+          row.names = F)  
+write.csv(train, 
+          file = "train_completer.csv",
+          row.names = F)  
+write.csv(test, 
+          file = "test_completer.csv",
           row.names = F)  
