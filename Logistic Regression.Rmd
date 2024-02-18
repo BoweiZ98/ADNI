@@ -1,0 +1,54 @@
+---
+title: "Logistic Regression"
+author: "Jin Cao"
+date: "2024-02-18"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+```
+
+## R Markdown
+
+#Import Dataset
+```{r}
+#Import dataset
+library(readxl)
+test = read.csv("C:/Users/uruz3/Desktop/FMPH243B/ADNI/test.csv")
+train = read.csv("C:/Users/uruz3/Desktop/FMPH243B/ADNI/train.csv")
+test_completer = read.csv("C:/Users/uruz3/Desktop/FMPH243B/ADNI/test_completer.csv")
+train_completer = read.csv("C:/Users/uruz3/Desktop/FMPH243B/ADNI/train_completer.csv")
+```
+
+#Logistic Regression with Backward Selection
+```{r}
+fit1 = glm(converter ~ ., data = train, family = binomial)
+summary(fit1)
+
+fit2 = step(fit1, direction="backward", trace=FALSE)
+summary(fit2)
+```
+
+#Calculate Accuracy
+```{r}
+predictions = predict(fit2, newdata = test, type = "response")
+predictions_binary = ifelse(predictions > 0.5, 1, 0)
+accuracy = predictions_binary == test$converter
+accuracy_rate = sum(accuracy)/nrow(test)
+accuracy_rate
+```
+
+#Sensitivity Analysis
+```{r}
+fit3 = glm(converter ~ ., data = train_completer, family = binomial)
+summary(fit3)
+
+fit4 = step(fit3, direction="backward", trace=FALSE)
+summary(fit4)
+
+predictions_s = predict(fit4, newdata = test_completer, type = "response")
+predictions_s_binary = ifelse(predictions_s > 0.5, 1, 0)
+accuracy_s = predictions_s_binary == test_completer$converter
+accuracy_rate_s = sum(accuracy_s)/nrow(test_completer)
+accuracy_rate_s
+```
