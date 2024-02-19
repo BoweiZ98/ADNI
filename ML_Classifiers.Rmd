@@ -1,0 +1,120 @@
+---
+title: ""
+author: "Jomel Meeko Manzano"
+date: "22nd February 2024"
+output:
+  html_document:
+    df_print: paged
+  pdf_document:
+    df_print: kable
+---
+
+
+```{r global_options, include=FALSE}
+# these are some optional settings that will change how some features look
+# you do not need to change them.
+knitr::opts_chunk$set(out.width = "50%", out.height="50%", fig.align="center", warning=FALSE, message=FALSE)
+```
+
+
+```{r , echo=FALSE}
+library(readxl)
+library(ISLR2)
+library(knitr)
+#library(MASS)
+library(class)
+library(glmnet)
+library(methods)
+library(tree)
+library(randomForest)
+library(ggplot2)
+library(gbm)
+library(dplyr)
+
+```
+
+
+# Load Data Set
+
+We are doing a 70-30 split 
+```{r}
+
+
+test = read.csv("test.csv")
+train = read.csv("train.csv")
+test_completer = read.csv("test_completer.csv")
+train_completer = read.csv("train_completer.csv")
+
+```
+
+# Data Cleaning 
+```{r, echo=FALSE}
+
+
+# --- Variable Changes --- 
+# Specify the columns to be converted to factor
+PT.var <- c("PTGENDER", "PTMARRY", "PTEDUCAT")
+
+# Loop through each column and convert to factor
+for (col in PT.var) {
+  train <- train %>% mutate({{col}} := as.factor({{col}}))
+  test <- test %>% mutate({{col}} := as.factor({{col}}))
+}
+
+
+```
+
+
+
+
+# Fit Forest
+```{r, echo=FALSE}
+
+set.seed(2024)
+
+mtry.value <- floor(sqrt(ncol(train) - 1)) # Determine mtry
+
+forest.adni <-  randomForest(converter ~ PTGENDER + PTMARRY + PTEDUCAT
+                            + AGE + MMSE, 
+                           mtry = mtry.value,
+                           importance = TRUE,
+                           ,data = train)
+
+
+forest.adni
+
+varImpPlot(forest.adni,cex=0.6)
+
+
+
+# --- Bagging --- 
+bagging.adni <-  randomForest(converter ~ ., 
+                           mtry = dim(train)[2]-1,
+                           importance = TRUE,
+                           ,data = train)
+
+varImpPlot(forest.adni,cex=0.6)
+
+
+```
+
+
+# Boosted Trees
+```{r, echo=FALSE}
+
+boost.tree <- gbm(converter~., data = train, distribution = "bernoulli",
+                  n.trees = 500, 
+                  cv.folds = 10, 
+                  shrinkage = .1)
+
+boost.tree.optimal <- gbm(converter~., data = train, 
+                          distribution = "bernoulli",
+                          n.trees = which.min(boost.tree$cv.error), 
+                          shrinkage = .1)
+
+summary(boost.tree.optimal,plotit=FALSE)
+
+```
+
+
+# Sensitivity Analysis

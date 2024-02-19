@@ -20,6 +20,7 @@ test_completer = read.csv("test_completer.csv")
 train_completer = read.csv("train_completer.csv")
 ```
 
+
 # Logistic Regression with Backward Selection
 ```{r}
 fit1 = glm(converter ~ ., data = train, family = binomial)
@@ -28,6 +29,7 @@ summary(fit1)
 fit2 = step(fit1, direction="backward", trace=FALSE)
 summary(fit2)
 ```
+
 
 # Calculate Accuracy
 ```{r}
