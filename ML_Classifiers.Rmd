@@ -30,6 +30,7 @@ library(randomForest)
 library(ggplot2)
 library(gbm)
 library(dplyr)
+library(cowplot)
 
 ```
 
@@ -47,19 +48,57 @@ train_completer = read.csv("train_completer.csv")
 
 ```
 
-# Data Cleaning 
+
 ```{r, echo=FALSE}
 
+# --- Data Cleaning ---
+
+# Train Set 
+
+str(train)
 
 # --- Variable Changes --- 
 # Specify the columns to be converted to factor
-PT.var <- c("PTGENDER", "PTMARRY", "PTEDUCAT")
+# Specify the columns to be converted to factor
+char.var <- c("PTGENDER", "PTMARRY", "PTEDUCAT", "DX.bl")
 
-# Loop through each column and convert to factor
-for (col in PT.var) {
-  train <- train %>% mutate({{col}} := as.factor({{col}}))
-  test <- test %>% mutate({{col}} := as.factor({{col}}))
-}
+
+train$PTGENDER <- as.factor(train$PTGENDER)
+train$PTMARRY <- as.factor(train$PTMARRY)
+#train$PTEDUCAT <- as.factor(train$PTEDUCAT)
+train$DX.bl <- as.factor(train$DX.bl)
+train$converter <- as.factor(train$converter)
+
+str(train)
+
+
+# Test Set 
+
+test$PTGENDER <- as.factor(test$PTGENDER)
+test$PTMARRY <- as.factor(test$PTMARRY)
+#test$PTEDUCAT <- as.factor(test$PTEDUCAT)
+test$DX.bl <- as.factor(test$DX.bl)
+test$converter <- as.factor(test$converter)
+
+
+# -------------- COMPLETERS -------------
+
+train_completer$PTGENDER <- as.factor(train_completer$PTGENDER)
+train_completer$PTMARRY <- as.factor(train_completer$PTMARRY)
+#train_completer$PTEDUCAT <- as.factor(train_completer$PTEDUCAT)
+train_completer$DX.bl <- as.factor(train_completer$DX.bl)
+train_completer$converter <- as.factor(train_completer$converter)
+
+str(train_completer)
+
+
+# test_completer Set 
+
+test_completer$PTGENDER <- as.factor(test_completer$PTGENDER)
+test_completer$PTMARRY <- as.factor(test_completer$PTMARRY)
+#test_completer$PTEDUCAT <- as.factor(test_completer$PTEDUCAT)
+test_completer$DX.bl <- as.factor(test_completer$DX.bl)
+test_completer$converter <- as.factor(test_completer$converter)
 
 
 ```
@@ -67,54 +106,212 @@ for (col in PT.var) {
 
 
 
-# Fit Forest
+# Fit Random Forest
 ```{r, echo=FALSE}
+# --- Notes ---
+# We want the lowest OOB error rate.
 
+
+# ---
 set.seed(2024)
 
 mtry.value <- floor(sqrt(ncol(train) - 1)) # Determine mtry
 
-forest.adni <-  randomForest(converter ~ PTGENDER + PTMARRY + PTEDUCAT
-                            + AGE + MMSE, 
+forest.adni <-  randomForest(converter ~ ., 
                            mtry = mtry.value,
                            importance = TRUE,
+                           proximity = TRUE,
+                           ntree = 1000,
                            ,data = train)
 
 
 forest.adni
+```
 
-varImpPlot(forest.adni,cex=0.6)
+## Optimality of Trees
+```{r, echo=FALSE}
+# Optimality of Trees
+oob.error.data <- data.frame(
+  Trees=rep(1:nrow(forest.adni$err.rate), times=3),
+  Type=rep(c("OOB", "0", "1"), each=nrow(forest.adni$err.rate)),
+  Error=c(forest.adni$err.rate[,"OOB"], 
+    forest.adni$err.rate[,"0"], 
+    forest.adni$err.rate[,"1"]))
 
-
-
-# --- Bagging --- 
-bagging.adni <-  randomForest(converter ~ ., 
-                           mtry = dim(train)[2]-1,
-                           importance = TRUE,
-                           ,data = train)
-
-varImpPlot(forest.adni,cex=0.6)
+ggplot(data=oob.error.data, aes(x=Trees, y=Error)) +
+  geom_line(aes(color=Type))
 
 
 ```
+- As we can observe from the graph above. The default number of trees in R is 500 and after 500 trees, the error seems to stabilize. 
 
 
-# Boosted Trees
+## MTRY Value Search
 ```{r, echo=FALSE}
 
-boost.tree <- gbm(converter~., data = train, distribution = "bernoulli",
-                  n.trees = 500, 
-                  cv.folds = 10, 
-                  shrinkage = .1)
 
-boost.tree.optimal <- gbm(converter~., data = train, 
-                          distribution = "bernoulli",
-                          n.trees = which.min(boost.tree$cv.error), 
-                          shrinkage = .1)
+# MTRY Value search
+oob.values <- vector(length=10)
+for(i in 1:10) {
+  temp.model <- randomForest(converter ~ ., 
+                           mtry = i,
+                           importance = TRUE,
+                           proximity = TRUE,
+                           ntree = 500,
+                           ,data = train)
+  oob.values[i] <- temp.model$err.rate[nrow(temp.model$err.rate),1]
+}
+oob.values
 
-summary(boost.tree.optimal,plotit=FALSE)
+## find the minimum error
+min(oob.values)
+## find the optimal value for mtry...
+which(oob.values == min(oob.values))
+## create a model for proximities using the best value for mtry
+
+```
+- Here we are finding different values of mtry which give the lowest OOB-error. We set values of mtry from 1 to 10 and noticed that an mtry of 1 has the lowest OOB-error.
+
+
+## Final Random Forest Model
+```{r, echo=FALSE}
+
+forest.adni.final <-  randomForest(converter ~ ., 
+                           mtry = 1,
+                           importance = TRUE,
+                           proximity = TRUE,
+                           ntree = 500,
+                           ,data = train)
+
+forest.adni.final
+
+
+kable(forest.adni.final$confusion)
+
+```
+- 
+
+## MDS Plot
+```{r, echo = FALSE}
+
+## Start by converting the proximity matrix into a distance matrix.
+distance.matrix <- as.dist(1-forest.adni.final$proximity)
+
+mds.stuff <- cmdscale(distance.matrix, eig=TRUE, x.ret=TRUE)
+
+## calculate the percentage of variation that each MDS axis accounts for...
+mds.var.per <- round(mds.stuff$eig/sum(mds.stuff$eig)*100, 1)
+
+## now make a fancy looking plot that shows the MDS axes and the variation:
+mds.values <- mds.stuff$points
+mds.data <- data.frame(Sample=rownames(mds.values),
+  X=mds.values[,1],
+  Y=mds.values[,2],
+  Status=train$converter)
+
+ggplot(data=mds.data, aes(x=X, y=Y, label=Sample)) + 
+  geom_text(aes(color=Status)) +
+  theme_bw() +
+  xlab(paste("MDS1 - ", mds.var.per[1], "%", sep="")) +
+  ylab(paste("MDS2 - ", mds.var.per[2], "%", sep="")) +
+  ggtitle("MDS plot using (1 - Random Forest Proximities)")
 
 ```
 
 
+## Predict on Test Data
+```{r, echo=FALSE}
+
+predictions <- predict(forest.adni.final, newdata = test, type = "response")
+predictions <- as.numeric(as.character(predictions))  # Convert to numeric if needed
+predictions_binary <- ifelse(predictions > 0.5, 1, 0)
+accuracy <- predictions_binary == test$converter
+accuracy_rate <- sum(accuracy) / nrow(test)
+accuracy_rate
+
+```
+
 # Sensitivity Analysis
+
+## MTRY Value Search
+```{r, echo=FALSE}
+
+
+# MTRY Value search
+oob.values <- vector(length=10)
+for(i in 1:10) {
+  temp.model <- randomForest(converter ~ ., 
+                           mtry = i,
+                           importance = TRUE,
+                           proximity = TRUE,
+                           ntree = 500,
+                           ,data = train_completer)
+  oob.values[i] <- temp.model$err.rate[nrow(temp.model$err.rate),1]
+}
+oob.values
+
+## find the minimum error
+min(oob.values)
+## find the optimal value for mtry...
+which(oob.values == min(oob.values))
+## create a model for proximities using the best value for mtry
+
+```
+
+## Random Forest Model
+```{r, echo=FALSE}
+
+forest.adni.sensitivity <-  randomForest(converter ~ ., 
+                           mtry = 5,
+                           importance = TRUE,
+                           proximity = TRUE,
+                           ntree = 1000,
+                           ,data = test_completer)
+
+
+```
+
+
+
+## Optimality of Trees
+```{r, echo=FALSE}
+# Optimality of Trees
+oob.error.data <- data.frame(
+  Trees=rep(1:nrow(forest.adni.sensitivity$err.rate), times=3),
+  Type=rep(c("OOB", "0", "1"), each=nrow(forest.adni.sensitivity$err.rate)),
+  Error=c(forest.adni$err.rate[,"OOB"], 
+    forest.adni$err.rate[,"0"], 
+    forest.adni$err.rate[,"1"]))
+
+ggplot(data=oob.error.data, aes(x=Trees, y=Error)) +
+  geom_line(aes(color=Type))
+
+
+```
+
+## Final Random Forest Model
+```{r, echo=FALSE}
+
+forest.adni.sensitivity <-  randomForest(converter ~ ., 
+                           mtry = 5,
+                           importance = TRUE,
+                           proximity = TRUE,
+                           ntree = 500,
+                           ,data = test_completer)
+
+
+```
+
+
+## Predict on Test Data
+```{r, echo=FALSE}
+
+predictions <- predict(forest.adni.sensitivity, newdata = test, type = "response")
+predictions <- as.numeric(as.character(predictions))  # Convert to numeric if needed
+predictions_binary <- ifelse(predictions > 0.5, 1, 0)
+accuracy <- predictions_binary == test$converter
+accuracy_rate <- sum(accuracy) / nrow(test)
+accuracy_rate
+
+```
+- As we can we see above, the accuracy is a bit higher than when we only included completers in the data set. 
