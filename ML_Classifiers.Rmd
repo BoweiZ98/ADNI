@@ -16,6 +16,15 @@ output:
 knitr::opts_chunk$set(out.width = "50%", out.height="50%", fig.align="center", warning=FALSE, message=FALSE)
 ```
 
+```{r,include=FALSE, echo=FALSE}
+
+# Notes:
+# is assessing the accuracy correct here?? Which one is it 
+# accuracy_rate <- sum(accuracy) / length(accuracy)
+
+```
+
+
 
 ```{r , echo=FALSE}
 library(readxl)
@@ -127,6 +136,8 @@ forest.adni <-  randomForest(converter ~ .,
 
 forest.adni
 ```
+- Out of Bag Error rate here is 100% - 22.08% = 77.92%. This means that 77.92% of the OOB samples were correctly classified by the random forest. Just as a reminder, OOB is used to make predictions on the data. It is the "testing" data.
+
 
 ## Optimality of Trees
 ```{r, echo=FALSE}
@@ -143,7 +154,7 @@ ggplot(data=oob.error.data, aes(x=Trees, y=Error)) +
 
 
 ```
-- As we can observe from the graph above. The default number of trees in R is 500 and after 500 trees, the error seems to stabilize. 
+- As we can observe from the graph above. The default number of trees in R is 500 and after 500 trees, the error seems to stabilize. We will decide to stick to 500 trees. 
 
 
 ## MTRY Value Search
@@ -163,14 +174,22 @@ for(i in 1:10) {
 }
 oob.values
 
-## find the minimum error
-min(oob.values)
+
 ## find the optimal value for mtry...
 which(oob.values == min(oob.values))
-## create a model for proximities using the best value for mtry
+
+# Create a data frame
+result_df <- data.frame(MTRY = 1:10, 
+                        OOB_Error = round(oob.values,3))
+
+# Display the table using kable
+kable(result_df, col.names = c("MTRY", "OOB Error"), 
+      caption = "OOB Error Rate for Different MTRY Values", 
+      format = "markdown")
+
 
 ```
-- Here we are finding different values of mtry which give the lowest OOB-error. We set values of mtry from 1 to 10 and noticed that an mtry of 1 has the lowest OOB-error.
+- Here we are finding different values of mtry which give the lowest OOB-error. We set values of **mtry** from 1 to 10 and noticed that an **mtry** of 1 has the lowest OOB-error.
 
 
 ## Final Random Forest Model
@@ -189,7 +208,7 @@ forest.adni.final
 kable(forest.adni.final$confusion)
 
 ```
-- 
+- The final model on the training set appears to be struggling with correctly classifying people who are not going to develop Alzheimer's Disease in the next 5 years. Basically, the type 2 error is at 53%. 
 
 ## MDS Plot
 ```{r, echo = FALSE}
@@ -217,6 +236,8 @@ ggplot(data=mds.data, aes(x=X, y=Y, label=Sample)) +
   ggtitle("MDS plot using (1 - Random Forest Proximities)")
 
 ```
+- Just as a reminder, MDS aims to represent the pairwise dissimilarities or distances between data points in a lower-dimensional space while preserving the original distances as much as possible.
+- In the above MDS plot, we can see that there is a clear distinction between groups but there appears to be overlaps in some areas. There are converters in the non-converter groups and vice versa.
 
 
 ## Predict on Test Data
@@ -230,6 +251,7 @@ accuracy_rate <- sum(accuracy) / nrow(test)
 accuracy_rate
 
 ```
+- The accuracy of our random forest model on the test set is 79%.
 
 # Sensitivity Analysis
 
@@ -297,7 +319,7 @@ forest.adni.sensitivity <-  randomForest(converter ~ .,
                            importance = TRUE,
                            proximity = TRUE,
                            ntree = 500,
-                           ,data = test_completer)
+                           ,data = train_completer)
 
 
 ```
@@ -306,12 +328,12 @@ forest.adni.sensitivity <-  randomForest(converter ~ .,
 ## Predict on Test Data
 ```{r, echo=FALSE}
 
-predictions <- predict(forest.adni.sensitivity, newdata = test, type = "response")
+predictions <- predict(forest.adni.sensitivity, newdata = test_completer, type = "response")
 predictions <- as.numeric(as.character(predictions))  # Convert to numeric if needed
 predictions_binary <- ifelse(predictions > 0.5, 1, 0)
-accuracy <- predictions_binary == test$converter
-accuracy_rate <- sum(accuracy) / nrow(test)
+accuracy <- predictions_binary == test_completer$converter
+accuracy_rate <- sum(accuracy) / nrow(test_completer)
 accuracy_rate
 
 ```
-- As we can we see above, the accuracy is a bit higher than when we only included completers in the data set. 
+
