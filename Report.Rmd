@@ -211,7 +211,7 @@ result_df <- data.frame(MTRY = 1:10,
                         OOB_Error = round(oob.values,3))
 ```
 
-Another tuning parameter we considered was the MTRY value, which governs the randomness in the variable selection process for each split in the construction of trees in a random forest. Initially, we fitted separate models with MTRY values ranging from 1 to 10. Our analysis led us to the conclusion that a value of 4 resulted in the lowest Out of Bag (OOB) error.
+Another tuning parameter we considered was the MTRY value, which governs the randomness in the variable selection process for each split in the construction of trees in a random forest. Initially, we fitted separate models with MTRY values ranging from 1 to 10. Our analysis led us to the conclusion that a value of 1 resulted in the lowest Out of Bag (OOB) error.
 
 ```{r, echo = F, eval = T, message=F, warning=F}
 # Display the table using kable
@@ -220,7 +220,7 @@ kable(result_df, col.names = c("MTRY", "OOB Error"),
       format = "markdown")
 ```
 
-After configuring these tuning parameters, our final Random Forest model exhibited an Out of Bag (OOB) error rate of 22.34%. This implies that 77.02% of the OOB samples were correctly classified, as depicted in the confusion matrix below. Subsequently, we applied this model to predict the test set, achieving a prediction accuracy of 80%. Notably, the model seems to face challenges in correctly classifying converters, with an accuracy of 45%.
+After configuring these tuning parameters, our final Random Forest model exhibited an Out of Bag (OOB) error rate of 21.82%. This implies that 78.18% of the OOB samples were correctly classified, as depicted in the confusion matrix below. Subsequently, we applied this model to predict the test set, achieving a prediction accuracy of 80%. Notably, the model seems to face challenges in correctly classifying converters, with an accuracy of 49%.
 
 ```{r, echo = F, eval = T, message=F, warning=F}
 forest.adni.final <-  randomForest(converter ~ ., 
@@ -233,10 +233,12 @@ forest.adni.final <-  randomForest(converter ~ .,
 kable(forest.adni.final$confusion)
 ```
 
-For visual clarity, we generated a Multidimensional Scaling (MDS) plot to represent our model. In the plot, the non-converter group displays a broader spread, whereas the converter group forms a cluster. However, it's worth noting that some converters are scattered throughout the plot, extending beyond the main converter cluster.
+For visual clarity, we generated a Multidimensional Scaling (MDS) plot to represent our model. In the plot, the non-converter group displays a broader spread, whereas the converter group forms a cluster. However, it's worth noting that some converters are scattered throughout the plot, extending beyond the main converter clusters. 
 
 
 ```{r, echo = F, eval = T, message=F, warning=F, out.width= "80%", fig.align="center"}
+
+set.seed(2024)
 
 ## Start by converting the proximity matrix into a distance matrix.
 distance.matrix <- as.dist(1-forest.adni.final$proximity)
