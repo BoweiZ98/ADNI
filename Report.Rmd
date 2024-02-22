@@ -218,7 +218,7 @@ kable(result_df, col.names = c("MTRY", "OOB Error"),
       format = "markdown")
 ```
 
-After configuring these tuning parameters, our final Random Forest model exhibited an Out of Bag (OOB) error rate of 21.82%. This implies that 78.18% of the OOB samples were correctly classified, as depicted in the confusion matrix below. Subsequently, we applied this model to predict the test set, achieving a prediction accuracy of 80%. Notably, the model seems to face challenges in correctly classifying converters, with an accuracy of 49%.
+After configuring these tuning parameters, our final Random Forest model exhibited an Out of Bag (OOB) error rate of 21.82%. This implies that 78.18% of the OOB samples were correctly classified, as depicted in the confusion matrix below. Subsequently, we applied this model to predict the test set, achieving a prediction accuracy of 80%. Notably, the model seems to face challenges in correctly classifying converters, with an accuracy of 49%. The model predicts a patient of developing Alzheimer's Diseases within the next 5 years no better than a toss of a coin. 
 
 ```{r, echo = F, eval = T, message=F, warning=F}
 forest.adni.final <-  randomForest(converter ~ ., 
@@ -297,7 +297,7 @@ We also tried a simple neural network model of only one hidden layer with 8 neur
 
 # Conclusion
 
-Higher scores on the CDRSB, FAQ, ADASQ4, and TRABSCOR are associated with higher odds of conversion to dementia. While higher education and higher scores on immediate and delayed recall are associated with lower odds of conversion. 
+Higher scores on the CDRSB, FAQ, ADASQ4, and TRABSCOR are associated with higher odds of conversion to dementia. While higher education and higher scores on immediate and delayed recall are associated with lower odds of conversion. A Random Forest and Neural Network was used for sensitivity analysis with Random Forest performing better than Neural Network by 3% to 4%. 
 
 
 \newpage
