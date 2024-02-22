@@ -3,10 +3,10 @@ title: ""
 author: "Jomel Meeko Manzano"
 date: "22nd February 2024"
 output:
-  html_document:
-    df_print: paged
   pdf_document:
     df_print: kable
+  html_document:
+    df_print: paged
 ---
 
 
@@ -150,7 +150,8 @@ oob.error.data <- data.frame(
     forest.adni$err.rate[,"1"]))
 
 ggplot(data=oob.error.data, aes(x=Trees, y=Error)) +
-  geom_line(aes(color=Type))
+  geom_line(aes(color=Type)) +
+  ggtitle("OOB Error Rate")
 
 
 ```
@@ -159,6 +160,8 @@ ggplot(data=oob.error.data, aes(x=Trees, y=Error)) +
 
 ## MTRY Value Search
 ```{r, echo=FALSE}
+
+set.seed(2024)
 
 
 # MTRY Value search
@@ -172,7 +175,6 @@ for(i in 1:10) {
                            data = train)
   oob.values[i] <- temp.model$err.rate[nrow(temp.model$err.rate),1]
 }
-oob.values
 
 
 ## find the optimal value for mtry...
@@ -196,7 +198,7 @@ kable(result_df, col.names = c("MTRY", "OOB Error"),
 ```{r, echo=FALSE}
 
 forest.adni.final <-  randomForest(converter ~ ., 
-                           mtry = 1,
+                           mtry = 4,
                            importance = TRUE,
                            proximity = TRUE,
                            ntree = 500,
@@ -207,11 +209,14 @@ forest.adni.final
 
 kable(forest.adni.final$confusion)
 
+
 ```
 - The final model on the training set appears to be struggling with correctly classifying people who are not going to develop Alzheimer's Disease in the next 5 years. Basically, the type 2 error is at 53%. 
 
 ## MDS Plot
 ```{r, echo = FALSE}
+
+set.seed(2024)
 
 ## Start by converting the proximity matrix into a distance matrix.
 distance.matrix <- as.dist(1-forest.adni.final$proximity)
