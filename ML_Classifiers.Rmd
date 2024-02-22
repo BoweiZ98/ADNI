@@ -131,7 +131,7 @@ forest.adni <-  randomForest(converter ~ .,
                            importance = TRUE,
                            proximity = TRUE,
                            ntree = 1000,
-                           ,data = train)
+                           data = train)
 
 
 forest.adni
@@ -169,7 +169,7 @@ for(i in 1:10) {
                            importance = TRUE,
                            proximity = TRUE,
                            ntree = 500,
-                           ,data = train)
+                           data = train)
   oob.values[i] <- temp.model$err.rate[nrow(temp.model$err.rate),1]
 }
 oob.values
@@ -200,7 +200,7 @@ forest.adni.final <-  randomForest(converter ~ .,
                            importance = TRUE,
                            proximity = TRUE,
                            ntree = 500,
-                           ,data = train)
+                           data = train)
 
 forest.adni.final
 
@@ -267,7 +267,7 @@ for(i in 1:10) {
                            importance = TRUE,
                            proximity = TRUE,
                            ntree = 500,
-                           ,data = train_completer)
+                           data = train_completer)
   oob.values[i] <- temp.model$err.rate[nrow(temp.model$err.rate),1]
 }
 oob.values
@@ -319,7 +319,7 @@ forest.adni.sensitivity <-  randomForest(converter ~ .,
                            importance = TRUE,
                            proximity = TRUE,
                            ntree = 500,
-                           ,data = train_completer)
+                           data = train_completer)
 
 
 ```
