@@ -84,8 +84,6 @@ accuracy_rate = sum(accuracy)/nrow(test)
 print(paste0("Test Accuracy: ", round(accuracy_rate,2)))
 ```
 
-\newpage
-
 # Sensitivity Analysis
 
 ## Logistic Regression: Completers Only
@@ -275,7 +273,7 @@ print(paste0("Test Accuracy: ", round(accuracy_rate,2)))
 
 ## Neural Network
 
-We also tried a simple neural network model of only one hidden layer with 8 neurons. After comparing different width and depth of the neural network architecture, we found out that a simple neural network with of only one hidden layer with 8 neurons gave the relatively best result with test accuracy of 77.61%.
+We also tried a simple neural network model of only one hidden layer with 8 neurons. After comparing different width and depth of the neural network architecture, we found out that a simple neural network with of only one hidden layer with 8 neurons gave the relatively best result. If we make the neural network model wider or deeper, it would start to become overfit. In the end, when testing the model on the test set, we get an accuracy of 77.61% which is slightly worse than logistic regression and random forest. 
 
 \begin{figure}
 \centering
@@ -298,6 +296,9 @@ We also tried a simple neural network model of only one hidden layer with 8 neur
 \newpage
 
 # Conclusion
+
+Higher scores on the CDRSB, FAQ, ADASQ4, and TRABSCOR are associated with higher odds of conversion to dementia. While higher education and higher scores on immediate and delayed recall are associated with lower odds of conversion. 
+
 
 \newpage
 
