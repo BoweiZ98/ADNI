@@ -299,6 +299,20 @@ We also tried a simple neural network model of only one hidden layer with 8 neur
 
 Higher scores on the CDRSB, FAQ, ADASQ4, and TRABSCOR are associated with higher odds of conversion to dementia. While higher education and higher scores on immediate and delayed recall are associated with lower odds of conversion. A Random Forest and Neural Network was used for sensitivity analysis with Random Forest performing better than Neural Network by 3% to 4%. 
 
+# Discussion
+
+Strength:
+
+- Three different sensitivity analysis were included to access potential bias
+- Included both parametric and non-parametric models
+- All analysis achieved relatively high accuracy
+
+Weakness:
+
+- The sensitivity analysis on the completer only dataset yield different coefficients
+- Lacking background knowledge on AD conversion mechanism
+- Observational dataset
+
 
 \newpage
 
