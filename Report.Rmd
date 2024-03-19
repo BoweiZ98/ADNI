@@ -31,6 +31,7 @@ library(MASS)
 library(readxl)
 library(tidyverse)
 library(caret)
+library(gtsummary)
 ```
 
 \newpage
@@ -50,13 +51,29 @@ In this report, our goal is to develop a statistical model utilizing the ADNI da
 
 The original dataset ‘ADNIMERGE’ is a longitudinal dataset consisting of 2432 patients and 115 columns with 16443 rows. To obtain a dataset that fits our research objectives, we include participants that were diagnosed with EMCI or LMCI at the baseline. We also keep only the baseline measurement and add a new column ‘converter’ indicating if a patient is diagnosed with Dementia within 5 years since the baseline visit.
 
+```{r, echo = F, eval = T, message=F, warning=F}
+test = read.csv("test.csv")
+train = read.csv("train.csv")
+test_completer = read.csv("test_completer.csv")
+train_completer = read.csv("train_completer.csv")
+
+tbl_summary(rbind(train,test), b = converter)
+```
+
+
 ## Completer Dataset
 
 We also noticed that not every participants have entire 5-year of follow-up; therefore, we created another dataset called ‘completer’ that only includes participants with visit at month 60. The ‘completer’ dataset contains 270 observations, a noticeable reduction in number compared to the ‘baseline’ dataset.
 
 We split both ‘baseline’ and ‘completer’ datasets into train and test sets by 70:30 ratio. 
 
+```{r, echo = F, eval = T, message=F, warning=F}
+tbl_summary(rbind(train_completer, test_completer), b = converter,
+            type = list(CDRSB ~ "continuous", MMSE ~ "continuous"))
+```
+
 \newpage
+
 # Main Analyses 
 
 ## Logistic Regression
@@ -64,16 +81,17 @@ We split both ‘baseline’ and ‘completer’ datasets into train and test se
 The main model of choice in this study is the logistic regression for its robustness in dealing with all kinds of distribution of the predictors and the easiness of interpretation and inference. After fitting the full model with all available variables in the training dataset, a backward selection is conducted using the step function with AIC as the criterion. seven predictors are left in the model after the variable selection, and they all show statistical significance. The logistic regression model has achieved a 0.81 accuracy rate predicting the testing dataset.
 
 ```{r, echo = F, eval = T, message=F, warning=F}
-test = read.csv("test.csv")
-train = read.csv("train.csv")
-test_completer = read.csv("test_completer.csv")
-train_completer = read.csv("train_completer.csv")
-
 fit1 = glm(converter ~ ., data = train, family = binomial)
 fit2 = step(fit1, direction="backward", trace=FALSE)
 
 s.fit2 = summary(fit2)
 s.fit2$coefficients %>% round(4) %>% knitr::kable(caption = "Logistic Regression on the baseline dataset")
+```
+
+
+```{r, echo = F, eval = T, message=F, warning=F}
+exp(s.fit2$coefficients[,1]) %>% round(4) %>% 
+  knitr::kable(caption = "Exponential of coefficients")
 ```
 
 ```{r, echo = F, eval = T, message=F, warning=F}
@@ -94,6 +112,9 @@ fit3 = glm(formula = fit2$formula,
            family = binomial)
 s.fit3 = summary(fit3)
 s.fit3$coefficients %>% round(4) %>% knitr::kable(caption = "Logistic Regression on the Completer Dataset")
+
+exp(s.fit3$coefficients[,1]) %>% round(4) %>% 
+  knitr::kable(caption = "Exponential of Coefficients")
 
 predictions_s = predict(fit3, newdata = test_completer, type = "response")
 predictions_s_binary = ifelse(predictions_s > 0.5, 1, 0)
@@ -297,7 +318,9 @@ We also tried a simple neural network model of only one hidden layer with 8 neur
 
 # Conclusion
 
-Higher scores on the CDRSB, FAQ, ADASQ4, and TRABSCOR are associated with higher odds of conversion to dementia. While higher education and higher scores on immediate and delayed recall are associated with lower odds of conversion. A Random Forest and Neural Network was used for sensitivity analysis with Random Forest performing better than Neural Network by 3% to 4%. 
+Higher scores on the CDRSB, FAQ, ADASQ4, and TRABSCOR are associated with higher odds of conversion to dementia. While higher scores on immediate and delayed recall are associated with lower odds of conversion. An counter-intuitive finding is that as education year increases, participants are more likely to be converter. This could indicate uncovered counfounder present in the study that needs further investigation. 
+
+A Random Forest and Neural Network was used for sensitivity analysis with Random Forest performing better than Neural Network by 3% to 4%. 
 
 # Discussion
 
